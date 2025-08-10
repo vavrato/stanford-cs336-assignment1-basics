@@ -401,3 +401,13 @@ def data_loader(
     t = torch.from_numpy(dataset[indices]).to(dtype=torch.int64, device=device)
 
     return (t[:, :-1], t[:, 1:])
+
+def save_checkpoint(model: nn.Module, optimizer: torch.optim.Optimizer, iteration: int, out: str):
+    torch.save({'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'iteration': iteration}, out)
+
+def load_checkpoint(src: str, model: nn.Module, optimizer: torch.optim.Optimizer) -> int:
+    d = torch.load(src)
+    model.load_state_dict(d['model'])
+    optimizer.load_state_dict(d['optimizer'])
+
+    return d['iteration']
