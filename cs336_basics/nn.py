@@ -396,18 +396,20 @@ def data_loader(
     dataset: np.ndarray, batch_size: int, context_length: int, device: str
 ) -> tuple[torch.Tensor, torch.Tensor]:
     indices = np.random.randint(0, len(dataset) - context_length, size=batch_size)
-    indices = indices.reshape(-1, 1) + np.arange(context_length+1)
+    indices = indices.reshape(-1, 1) + np.arange(context_length + 1)
 
     t = torch.from_numpy(dataset[indices]).to(dtype=torch.int64, device=device)
 
     return (t[:, :-1], t[:, 1:])
 
+
 def save_checkpoint(model: nn.Module, optimizer: torch.optim.Optimizer, iteration: int, out: str):
-    torch.save({'model': model.state_dict(), 'optimizer': optimizer.state_dict(), 'iteration': iteration}, out)
+    torch.save({"model": model.state_dict(), "optimizer": optimizer.state_dict(), "iteration": iteration}, out)
+
 
 def load_checkpoint(src: str, model: nn.Module, optimizer: torch.optim.Optimizer) -> int:
     d = torch.load(src)
-    model.load_state_dict(d['model'])
-    optimizer.load_state_dict(d['optimizer'])
+    model.load_state_dict(d["model"])
+    optimizer.load_state_dict(d["optimizer"])
 
-    return d['iteration']
+    return d["iteration"]
