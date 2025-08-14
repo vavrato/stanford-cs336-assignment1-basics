@@ -7,6 +7,7 @@ import os
 from typing import BinaryIO, Iterator, Optional
 import regex as re
 
+import torch
 from tqdm import tqdm
 
 
@@ -143,6 +144,11 @@ def merge_and_update_all(max_pair, word, word_counter, pair_counter, pair_positi
     type=click.Path(exists=True),
     default="/Users/tomas.vavra/python-projects/cs336-assignment1-basics/data/TinyStoriesV2-GPT4-valid.txt",
 )
+@click.argument(
+    "output",
+    type=click.Path(exists=False),
+    default="trained_tokenizer.json"
+)
 @click.option("--vocab_size", type=click.INT, default=1000)
 @click.option("--special_tokens", type=click.STRING, default="['<|endoftext|>']")
 @click.option("--n_chunks", type=click.INT, default=40)
@@ -201,7 +207,9 @@ def train_tokenizer(**kwargs):
     vocab_dict = {i: word for i, word in enumerate(vocab)}
     print(f"The whole thing took {time() - start_t}")
 
-    return vocab_dict, merges
+    torch.save({"vocab_dict": vocab_dict, "merges": merges, "special_tokens": special_tokens}, kwargs['output'])
+
+    # return vocab_dict, merges
 
 
 if __name__ == "__main__":
