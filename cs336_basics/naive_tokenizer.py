@@ -1,7 +1,8 @@
 from __future__ import annotations
 import json
 import os
-from typing import Iterable, Iterator, Optional, Self
+from typing_extensions import Self
+from typing import Iterable, Iterator, Optional
 from collections import Counter, defaultdict
 import regex as re
 
