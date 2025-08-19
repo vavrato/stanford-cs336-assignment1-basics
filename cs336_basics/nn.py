@@ -393,7 +393,7 @@ def gradient_clipping(params, M: float):
 
 
 def data_loader(
-    dataset: np.ndarray, batch_size: int, context_length: int, device: str
+    dataset: np.ndarray, batch_size: int, context_length: int, device: Optional[str] = None
 ) -> tuple[torch.Tensor, torch.Tensor]:
     indices = np.random.randint(0, len(dataset) - context_length, size=batch_size)
     indices = indices.reshape(-1, 1) + np.arange(context_length + 1)
