@@ -1,0 +1,14 @@
+train_dataset: tiny_train.npy
+valid_dataset: tiny_valid.npy
+tokenizer: tokenizer_tiny_train.pt
+n_steps: 20000
+batch_size: 64
+context_len: 256
+n_layers: 8
+n_heads: 32
+d_model: 256
+d_ff: 300
+lr: 0.001
+wandb_project: cs336-a1
+logging_path: runs/ts
+seed: 123456789
