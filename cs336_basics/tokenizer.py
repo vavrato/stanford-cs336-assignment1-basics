@@ -1,6 +1,9 @@
 from __future__ import annotations
+from functools import lru_cache
 import json
 import os
+import torch
+from tqdm import tqdm
 from typing_extensions import Self
 from typing import Iterable, Iterator, Optional
 from collections import Counter, defaultdict
@@ -51,6 +54,11 @@ class Tokenizer:
             output.append(word[i])
 
         return tuple(output)
+    
+    @classmethod
+    def from_trainer(cls, filepath: str):
+        d=torch.load(filepath)
+        return cls(d['vocab_dict'], d['merges'], d['special_tokens'])
 
     @classmethod
     def from_files(cls, vocab_filepath: str, merges_filepath: str, special_tokens: Optional[list[str]] = None) -> Self:
@@ -82,7 +90,8 @@ class Tokenizer:
             splits = self._split_on_special_tokens(text, self.special_tokens)
         else:
             splits = [text]
-        for sentence in splits:
+        print('making words as byte tuples')
+        for sentence in tqdm(splits):
             if sentence not in self.special_tokens:
                 pretokens: Iterator = self._pretokenize(sentence)
                 for word_match in pretokens:
@@ -94,13 +103,15 @@ class Tokenizer:
                 words_as_tuples.append((sentence.encode(),))
 
         token_sequence = []
-        for word in words_as_tuples:
+        print('starting BPE encoding of the tuples')
+        for word in tqdm(words_as_tuples):
             word_tokenized = self.BPE_encode_one_word(word)
             for token in word_tokenized:
                 token_sequence.append(self.vocab_inverted[token])
 
         return token_sequence
 
+    @lru_cache(maxsize=50000)
     def BPE_encode_one_word(self, word: tuple[bytes, ...]) -> tuple[bytes, ...]:
         if word in self.special_tokens:
             return word
