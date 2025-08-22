@@ -198,6 +198,7 @@ def sdpa(
     presoftmax = 1 / d_k ** (0.5) * (Q @ rearrange(K, "... keys d_model -> ... d_model keys"))
 
     if mask is not None:
+        mask = mask.to(Q.device)
         presoftmax += torch.where(mask, 0, -torch.inf)
 
     return softmax(presoftmax, dim=-1) @ V
@@ -212,7 +213,7 @@ class MultiHeadAttention(nn.Module):
         d_v: Optional[int] = None,
         max_seq_len: int = 1,
         use_rope: bool = False,
-        theta: float = 10000,
+        theta: float = 10000
     ):
         super().__init__()
         self.num_heads = num_heads
@@ -255,7 +256,7 @@ class MultiHeadAttention(nn.Module):
             K = self.rope.forward(K, positions=token_positions)
 
         seq_len = x.shape[-2]
-        mask = rearrange(torch.tril(torch.ones(seq_len, seq_len)).bool(), "s1 s2 -> 1 1 s1 s2")  # causal mask
+        mask = rearrange(torch.tril(torch.ones(seq_len, seq_len, device=x.device)).bool(), "s1 s2 -> 1 1 s1 s2") # causal mask
         attention = sdpa(Q, K, V, mask=mask)  # batch, num_heads, seq_len, d_k
         attention = rearrange(attention, "b h s d -> b s (h d)")  # this is the concatenation
 
@@ -319,6 +320,40 @@ class Transformer(nn.Module):
         x = self.linear(x)
 
         return x
+    
+    def generate(self, input_ids: list[int], max_len: int, eot_token_id: int, temp: float = 1, top_p: float = 1) -> list[int]:
+        for _ in range(max_len):
+            input = torch.tensor(input_ids, dtype=torch.long).unsqueeze(0)
+            output = self.forward(input).squeeze()[-1,:]
+            output = output/temp
+
+            probs = softmax(output, dim=-1)
+
+            if temp == 0:
+                new_token = torch.argmax(probs).item()
+
+            else:
+                if top_p < 1.0:
+                    sorted_probs, sorted_idx = torch.sort(probs, descending=True)
+                    cumprobs = torch.cumsum(sorted_probs, dim=-1)
+                    cutoff = torch.searchsorted(cumprobs, top_p, right=True).item()
+                    keep_idx = sorted_idx[:cutoff + 1]
+
+                    cand_probs = probs[keep_idx]
+                    cand_probs = cand_probs / cand_probs.sum()
+
+                    sample_pos = torch.multinomial(cand_probs, 1).item()
+                    new_token = keep_idx[sample_pos].item()
+                else:
+                    new_token = torch.multinomial(probs, 1).item()
+
+
+            input_ids.append(new_token)
+            if new_token == eot_token_id:
+                break
+
+        return input_ids
+
 
 
 def cross_entropy(logits: Float[Tensor, "b vocab_size"], targets: Int[Tensor, "b"]) -> Float[Tensor, ""]:
@@ -377,7 +412,8 @@ def cosine_annealing(t: int, lr_max: float, lr_min: float, T_w: int, T_c: int) -
 
 
 def gradient_clipping(params, M: float):
-    norm = torch.tensor(0.0)
+    device = next(p.grad.device for p in params if p.grad is not None)
+    norm = torch.tensor(0.0, device=device)
     for p in params:
         if p.grad is None:
             continue
@@ -413,3 +449,11 @@ def load_checkpoint(src: str, model: nn.Module, optimizer: torch.optim.Optimizer
     optimizer.load_state_dict(d["optimizer"])
 
     return d["iteration"]
+
+if __name__ == "__main__":
+    t = Transformer(10000, 128, 4, 400, 4, 600, 10000)
+#    t.generate([0, 10, 13, 45], 10, 128, 3, .1)
+    train_dataset = np.load("/Users/tomas.vavra/python-projects/cs336-assignment1-basics/cs336_basics/tiny_train.npy", mmap_mode='r')
+    inputs, _ = data_loader(train_dataset, 1, 128)
+    inputs = inputs.squeeze().numpy().tolist()
+    print(t.generate(inputs[:10], 100, 128, 3, .1))
