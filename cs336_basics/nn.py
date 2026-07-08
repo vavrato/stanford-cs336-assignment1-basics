@@ -324,7 +324,7 @@ class Transformer(nn.Module):
     def generate(self, input_ids: list[int], max_len: int, eot_token_id: int, temp: float = 1, top_p: float = 1) -> list[int]:
         for _ in range(max_len):
             input = torch.tensor(input_ids, dtype=torch.long).unsqueeze(0)
-            output = self.forward(input).squeeze()[-1,:]
+            output = self.forward(input).squeeze(0)[-1,:]
             output = output/temp
 
             probs = softmax(output, dim=-1)
