@@ -94,7 +94,7 @@ def train(**kwargs):
             kwargs['T_c'] = kwargs['n_steps']
 
     # compiling not really good with mps, it is slower :-(
-    # model = torch.compile(model, backend="aot_eager")  
+    #model = torch.compile(model, backend="aot_eager")  
 
 
     train_losses = []
@@ -140,13 +140,9 @@ def train(**kwargs):
                 run.log({"train_loss": loss}, step=step)
 
             if (kwargs['checkpoint_frequency'] > 0) and (step % kwargs['checkpoint_frequency'] == 0):
-                save_checkpoint(model, optimizer, step, os.path.join(kwargs['logging_dir'], f"step_{step}.py"))
+                save_checkpoint(model, optimizer, step, os.path.join(kwargs['logging_dir'], f"step_{step}.bin"))
 
             train_losses.append(loss)
-
-            # stopping if 10 consecutive steps are above the random baseline
-            if sum(train_losses[-10:])/10 > 9:
-                break
 
 
 if __name__ == "__main__":

@@ -90,8 +90,7 @@ class Tokenizer:
             splits = self._split_on_special_tokens(text, self.special_tokens)
         else:
             splits = [text]
-        print('making words as byte tuples')
-        for sentence in tqdm(splits):
+        for sentence in splits:
             if sentence not in self.special_tokens:
                 pretokens: Iterator = self._pretokenize(sentence)
                 for word_match in pretokens:
@@ -103,8 +102,7 @@ class Tokenizer:
                 words_as_tuples.append((sentence.encode(),))
 
         token_sequence = []
-        print('starting BPE encoding of the tuples')
-        for word in tqdm(words_as_tuples):
+        for word in words_as_tuples:
             word_tokenized = self.BPE_encode_one_word(word)
             for token in word_tokenized:
                 token_sequence.append(self.vocab_inverted[token])

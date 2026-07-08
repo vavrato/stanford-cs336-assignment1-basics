@@ -9,8 +9,8 @@ import numpy.typing as npt
 import torch
 from torch import Tensor, softmax
 
-from cs336_basics.naive_tokenizer import MyTokenizer, Tokenizer
-from cs336_basics.nn import ROPE, AdamW, Embedding, FFN_SwiGLU, Linear, MultiHeadAttention, RMSNorm, Silu, Transformer, TransformerBlock, cosine_annealing, cross_entropy, data_loader, gradient_clipping, sdpa, silu, ffn_swiglu
+from cs336_basics.tokenizer import train_tokenizer, Tokenizer
+from cs336_basics.nn import ROPE, AdamW, Embedding, FFN_SwiGLU, Linear, MultiHeadAttention, RMSNorm, Silu, Transformer, TransformerBlock, cosine_annealing, cross_entropy, data_loader, gradient_clipping, load_checkpoint, save_checkpoint, sdpa, silu, ffn_swiglu
 
 
 
@@ -579,7 +579,7 @@ def run_save_checkpoint(
             we've completed.
         out (str | os.PathLike | BinaryIO | IO[bytes]): Path or file-like object to serialize the model, optimizer, and iteration to.
     """
-    raise NotImplementedError
+    save_checkpoint(model, optimizer, iteration, out)
 
 
 def run_load_checkpoint(
@@ -600,7 +600,7 @@ def run_load_checkpoint(
     Returns:
         int: the previously-serialized number of iterations.
     """
-    raise NotImplementedError
+    return load_checkpoint(src, model, optimizer)
 
 
 def get_tokenizer(
@@ -653,9 +653,9 @@ def run_train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-    with open(input_path, 'r') as f:
-        text = f.read()
 
-    tokenizer = MyTokenizer()
 
-    return tokenizer.train(text, special_tokens, vocab_size)
+    # tokenizer = TokenizerTrainer()
+    return train_tokenizer(dataset=input_path, vocab_size=vocab_size, special_tokens=special_tokens)
+
+    # return tokenizer.train(text, special_tokens, vocab_size)
